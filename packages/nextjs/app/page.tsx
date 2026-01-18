@@ -1,77 +1,86 @@
 "use client";
 
-import Link from "next/link";
-import { Address } from "@scaffold-ui/components";
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { NextPage } from "next";
-import { hardhat } from "viem/chains";
-import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth";
+// ✅ YOUR PATH: Using the location you specified for the API service
+import { Vote, fetchVotes } from "~~/utils/scaffold-eth/snapshot";
+
+// ✅ YOUR PATH (Fixed for SSR):
+// We use your import source "@scaffold-ui/components", but we load it dynamically
+// to stop the "localStorage is not a function" error.
+const AddressInput = dynamic(() => import("@scaffold-ui/components").then(mod => mod.AddressInput), { ssr: false });
 
 const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
-  const { targetNetwork } = useTargetNetwork();
+  const [searchInput, setSearchInput] = useState("");
+
+  const [votes, setVotes] = useState<Vote[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSearch = async () => {
+    if (!searchInput) {
+      console.warn("Input is empty");
+      return;
+    }
+
+    setIsLoading(true);
+    console.log("Searching for:", searchInput);
+
+    // Uses the function from your updated utils path
+    const data = await fetchVotes(searchInput);
+
+    console.log("RAW API RESPONSE:", data);
+    setVotes(data);
+    setIsLoading(false);
+  };
 
   return (
     <>
-      <div className="flex items-center flex-col grow pt-10">
+      <div className="flex items-center flex-col flex-grow pt-20">
+        {/* HERO SECTION */}
         <div className="px-5">
           <h1 className="text-center">
             <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
+            <span className="block text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+              DAO Voter
+            </span>
           </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address
-              address={connectedAddress}
-              chain={targetNetwork}
-              blockExplorerAddressLink={
-                targetNetwork.id === hardhat.id ? `/blockexplorer/address/${connectedAddress}` : undefined
-              }
-            />
-          </div>
-
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              YourContract.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
+          <p className="text-center font-bold text-lg mt-4 max-w-md mx-auto text-gray-400">
+            Track your governance history. See every vote, every DAO, all in one clean dashboard.
           </p>
         </div>
 
-        <div className="grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col md:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
+        {/* SEARCH BOX SECTION */}
+        <div className="flex flex-col items-center mt-12 w-max max-w-lg gap-4 p-4 px-5 bg-gray-600 rounded-md">
+          <div className="w-full px-6">
+            <label className="label">
+              <span className="label-text text-base font-semibold">Enter Wallet Address</span>
+            </label>
+
+            <AddressInput value={searchInput} placeholder="0x... or vitalik.eth" onChange={setSearchInput} />
           </div>
+
+          <button
+            className="btn btn-primary btn-lg w-48 mt-4 shadow-xl shadow-blue-500/20"
+            onClick={handleSearch}
+            disabled={isLoading}
+          >
+            {isLoading ? <span className="loading loading-spinner"></span> : "Search History"}
+          </button>
+        </div>
+
+        {/* DEBUG RESULTS SECTION */}
+        <div className="mt-10 px-5 w-full max-w-3xl">
+          {votes.length > 0 && (
+            <div className="mockup-code bg-black text-green-400">
+              <pre data-prefix="$">
+                <code>Found {votes.length} votes!</code>
+              </pre>
+              <pre data-prefix=">">
+                <code>Top DAO: {votes[0].proposal.space.name}</code>
+              </pre>
+            </div>
+          )}
         </div>
       </div>
     </>
