@@ -3,34 +3,35 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { NextPage } from "next";
+import { useAccount } from "wagmi";
 import { VoteCard } from "~~/components/VoteCard";
-// ✅ YOUR PATH: Using the location you specified for the API service
 import { Vote, fetchVotes } from "~~/utils/scaffold-eth/snapshot";
 
-// ✅ YOUR PATH (Fixed for SSR):
-// We use your import source "@scaffold-ui/components", but we load it dynamically
-// to stop the "localStorage is not a function" error.
 const AddressInput = dynamic(() => import("@scaffold-ui/components").then(mod => mod.AddressInput), { ssr: false });
 
 const Home: NextPage = () => {
+  const { address: connectedAddress } = useAccount();
   const [searchInput, setSearchInput] = useState("");
 
   const [votes, setVotes] = useState<Vote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchInput) {
+  const handleSearch = async (forcedAddress?: string) => {
+    const targetAddress = typeof forcedAddress === "string" ? forcedAddress : searchInput;
+
+    if (!targetAddress) {
       console.warn("Input is empty");
       return;
     }
 
+    if (forcedAddress && typeof forcedAddress === "string") {
+      setSearchInput(forcedAddress);
+    }
+
     setIsLoading(true);
-    console.log("Searching for:", searchInput);
 
-    // Uses the function from your updated utils path
-    const data = await fetchVotes(searchInput);
+    const data = await fetchVotes(targetAddress);
 
-    console.log("RAW API RESPONSE:", data);
     setVotes(data);
     setIsLoading(false);
   };
@@ -52,18 +53,29 @@ const Home: NextPage = () => {
         </div>
 
         {/* SEARCH BOX SECTION */}
-        <div className="flex flex-col items-center mt-12 w-max max-w-lg gap-4 p-4 px-5 bg-gray-600 rounded-md">
-          <div className="w-full px-6">
-            <label className="label">
-              <span className="label-text text-base font-semibold">Enter Wallet Address</span>
-            </label>
+        <div className="flex flex-col items-center mt-12 w-full max-w-lg gap-4 p-6 bg-base-200 rounded-xl shadow-lg">
+          <div className="w-full">
+            <div className="flex justify-between items-end mb-2">
+              <label className="label p-0">
+                <span className="label-text text-base font-semibold">Enter Wallet Address</span>
+              </label>
+
+              {connectedAddress && (
+                <button
+                  className="btn btn-xs btn-ghost text-primary no-underline hover:bg-transparent hover:text-primary-focus bg-orange-400"
+                  onClick={() => handleSearch(connectedAddress)}
+                >
+                  Use my wallet
+                </button>
+              )}
+            </div>
 
             <AddressInput value={searchInput} placeholder="0x... or vitalik.eth" onChange={setSearchInput} />
           </div>
 
           <button
-            className="btn btn-primary btn-lg w-48 mt-4 shadow-xl shadow-blue-500/20"
-            onClick={handleSearch}
+            className="btn btn-primary btn-lg w-full mt-2 shadow-xl shadow-blue-500/20"
+            onClick={() => handleSearch()}
             disabled={isLoading}
           >
             {isLoading ? <span className="loading loading-spinner"></span> : "Search History"}
