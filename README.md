@@ -21,7 +21,7 @@ A clean, responsive dashboard to track governance voting history across the Ethe
 
 1. Clone the repo:
 ```bash
-git clone [https://github.com/YOUR_USERNAME/dao-voter-dashboard.git](https://github.com/YOUR_USERNAME/dao-voter-dashboard.git)
+git clone [https://github.com/dr-george-dev/dao-voter-dashboard.git]
 cd dao-voter-dashboard
 ```
 2. Install dependencies:
