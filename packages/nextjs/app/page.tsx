@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { NextPage } from "next";
+import { VoteCard } from "~~/components/VoteCard";
 // ✅ YOUR PATH: Using the location you specified for the API service
 import { Vote, fetchVotes } from "~~/utils/scaffold-eth/snapshot";
 
@@ -69,19 +70,21 @@ const Home: NextPage = () => {
           </button>
         </div>
 
-        {/* DEBUG RESULTS SECTION */}
-        <div className="mt-10 px-5 w-full max-w-3xl">
-          {votes.length > 0 && (
-            <div className="mockup-code bg-black text-green-400">
-              <pre data-prefix="$">
-                <code>Found {votes.length} votes!</code>
-              </pre>
-              <pre data-prefix=">">
-                <code>Top DAO: {votes[0].proposal.space.name}</code>
-              </pre>
-            </div>
-          )}
-        </div>
+        {/* RESULTS GRID */}
+        {votes.length > 0 && (
+          <div className="mt-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-5 pb-20">
+            {votes.map(vote => (
+              <VoteCard key={vote.id} vote={vote} />
+            ))}
+          </div>
+        )}
+
+        {/* EMPTY STATE */}
+        {votes.length === 0 && !isLoading && searchInput && (
+          <div className="mt-10 text-center text-gray-500">
+            <p>No votes found for this address.</p>
+          </div>
+        )}
       </div>
     </>
   );
